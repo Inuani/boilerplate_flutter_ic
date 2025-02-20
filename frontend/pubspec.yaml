@@ -9,7 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  agent_dart: ^0.1.24+1  # Updated to latest version
+  agent_dart:  ^1.0.0-dev.35
+
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,6 @@
-import 'package:agent_dart/agent/auth.dart';
 import 'package:flutter/material.dart';
-import 'package:frontend/counter.dart';
+import 'package:agent_dart/agent_dart.dart';
+import 'counter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,12 +12,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'ICP Counter',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const MyHomePage(title: 'ICP Counter'),
     );
   }
 }
@@ -34,59 +31,67 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   bool _loading = false;
-  // setup state class variable;
   Counter? counter;
 
   @override
   void initState() {
-    initCounter();
     super.initState();
+    initCounter();
   }
 
   Future<void> initCounter({Identity? identity}) async {
-    // initialize counter, change canister id here
+    setState(() => _loading = true);
     counter = Counter(
-        canisterId: 'be2us-64aaa-aaaaa-qaabq-cai',
-        url: 'http://localhost:8000');
-    // set agent when other paramater comes in like new Identity
+      canisterId: 'be2us-64aaa-aaaaa-qaabq-cai', // Your canister ID
+      url: 'http://127.0.0.1:4943', // Local DFX replica
+    );
     await counter?.setAgent(newIdentity: identity);
     await getValue();
   }
 
-  // get value from canister
   Future<void> getValue() async {
-    var counterValue = await counter?.getValue();
-    setState(() {
-      _counter = counterValue ?? _counter;
-      _loading = false;
-    });
+    try {
+      final counterValue = await counter?.getValue();
+      setState(() {
+        _counter = counterValue ?? _counter;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching value: $e')),
+        );
+      });
+    }
   }
 
-  // increment counter
   Future<void> _incrementCounter() async {
-    setState(() {
-      _loading = true;
-    });
-    await counter?.increment();
-    await getValue();
+    setState(() => _loading = true);
+    try {
+      await counter?.increment();
+      await getValue();
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error incrementing: $e')),
+        );
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
+      appBar: AppBar(title: Text(widget.title)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
+            const Text('The canister counter is now:'),
             Text(
-              '$_counter',
+              _loading ? 'loading...' : '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
           ],
